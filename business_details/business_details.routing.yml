@@ -1,0 +1,15 @@
+business_details.settings_form:
+  path: '/admin/config/system/business-details'
+  defaults:
+    _form: '\Drupal\business_details\Form\BusinessDetailsForm'
+    _title: 'Business Details Configuration'
+  requirements:
+    _permission: 'administer site configuration'
+
+business_details.api:
+  path: '/api/business-details'
+  defaults:
+    _controller: '\Drupal\business_details\Controller\BusinessDetailsController::getBusinessDetails'
+    _title: 'Business Details API'
+  requirements:
+    _permission: 'access content'

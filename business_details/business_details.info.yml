@@ -1,0 +1,7 @@
+name: 'Business Details'
+type: module
+description: 'Stores and exposes business details.'
+core_version_requirement: ^10
+package: Custom
+dependencies:
+  - drupal:jsonapi
