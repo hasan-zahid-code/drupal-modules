@@ -46,8 +46,8 @@ class ThemeSettingsForm extends ConfigFormBase
     ];
 
     $form['font_settings'] = [
-      '#type' => 'fieldset',
-      '#title' => $this->t('Font Settings'),
+    '#type' => 'details',
+    '#title' => $this->t('Font Settings'),
     ];
     foreach ($font_fields as $field_name => $label) {
       $form['font_settings'][$field_name] = [
@@ -56,13 +56,13 @@ class ThemeSettingsForm extends ConfigFormBase
         '#upload_location' => 'public://fonts/',
         '#default_value' => $config->get($field_name) ?? [],
         '#upload_validators' => [
-          'file_validate_extensions' => ['ttf otf woff woff2'],
+          'file_validate_extensions' => ['otf ttf woff woff2']
         ],
       ];
     }
 
     $form['color_settings'] = [
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $this->t('Color Settings'),
     ];
 
@@ -270,7 +270,7 @@ class ThemeSettingsForm extends ConfigFormBase
     ];
 
     $form['layout_spacing'] = [
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $this->t('Layout and Spacing Settings'),
       '#description' => $this->t('Configure the layout and spacing for the site.'),
     ];
@@ -307,7 +307,7 @@ class ThemeSettingsForm extends ConfigFormBase
 
     // Custom CSS/JavaScript Editor with validation.
     $form['custom_code'] = [
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $this->t('Custom CSS/JavaScript'),
       '#description' => $this->t('Add custom CSS and JavaScript for advanced customization. Ensure that the syntax is correct.'),
     ];
