@@ -1,0 +1,6 @@
+simple_entity_form.admin_menu:
+  title: 'Simple Entities'
+  description: 'Manage simple entities.'
+  parent: system.admin_structure
+  route_name: simple_entity_form.collection
+  weight: 10

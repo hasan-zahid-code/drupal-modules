@@ -1,0 +1,35 @@
+simple_entity_form.collection:
+  path: '/admin/structure/simple-entity'
+  defaults:
+    _entity_list: simple_entity
+    _title: 'Simple Entities'
+  requirements:
+    _permission: 'administer simple entity'
+
+simple_entity_form.add:
+  path: '/admin/structure/simple-entity/add'
+  defaults:
+    _entity_form: simple_entity.add
+    _title: 'Add Simple Entity'
+  requirements:
+    _permission: 'administer simple entity'
+
+entity.simple_entity.edit_form:
+  path: '/admin/structure/simple-entity/{simple_entity}/edit'
+  defaults:
+    _entity_form: 'simple_entity.edit'
+    _title: 'Edit Simple Entity'
+  requirements:
+    _permission: 'administer simple entity'
+  options:
+    parameters:
+      simple_entity:
+        type: entity:simple_entity
+
+entity.simple_entity.delete_form:
+  path: '/admin/structure/simple-entity/{simple_entity}/delete'
+  defaults:
+    _form: '\Drupal\simple_entity\Form\SimpleEntityDeleteForm'
+    _title: 'Delete Simple Entity'
+  requirements:
+    _entity_access: 'simple_entity.delete'
