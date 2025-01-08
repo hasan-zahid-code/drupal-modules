@@ -385,9 +385,9 @@ class ThemeSettingsForm extends ConfigFormBase
           $file->setPermanent();
           $file->save();
 
-          // Get the file URI and construct the S3 URL
           $file_uri = $file->getFileUri();
-          $file_url = 'https://' . $bucket_name . '.s3.amazonaws.com/' . $public_folder . '/' . ltrim($file_uri, 'public://');
+          $relative_path = str_replace('public://', '', $file_uri);
+          $file_url = 'https://' . $bucket_name . '.s3.amazonaws.com/' . $public_folder . '/' . $relative_path;
 
           // Save the file ID and file URL in the configuration
           $config->set($field_name, $file_ids)
@@ -399,8 +399,6 @@ class ThemeSettingsForm extends ConfigFormBase
         $config->clear($field_name);
       }
     }
-
-
 
     // Save color settings.
     $config
