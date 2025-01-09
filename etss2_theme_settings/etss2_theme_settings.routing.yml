@@ -13,3 +13,11 @@ etss2_theme_settings.json:
     _title: 'ETSS2 Theme Settings API'
   requirements:
     _permission: 'access content'
+
+etss2_theme_settings.font_proxy:
+  path: '/theme-settings/font/{file_name}'
+  defaults:
+    _controller: '\Drupal\etss2_theme_settings\Controller\FontProxyController::downloadFont'
+    _title: 'Download Font'
+  requirements:
+    _permission: 'access content'
