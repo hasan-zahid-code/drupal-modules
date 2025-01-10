@@ -90,8 +90,7 @@ class ThemeSettingsForm extends ConfigFormBase
         '#default_value' => $config->get($field_name . '_weight') ?? '',
         '#description' => $this->t('Specify the font weight (e.g., 100 for Thin, 400 for Regular, 700 for Bold).'),
       ];
-    } 
-    {
+    } {
       $form['color_settings'] = [
         '#type' => 'details',
         '#title' => $this->t('Color Settings'),
@@ -398,19 +397,19 @@ class ThemeSettingsForm extends ConfigFormBase
           $file = $media->get('field_media_file')->entity;
 
           if ($file) {
-            $file_uri = preg_replace('/^public:\/\//', '', $file->getFileUri());
-            $relative_path = '/theme-settings/font/' . $file_uri;
-
+            $file_uri = $file->getFileUri();
+            $file_uri = preg_replace('/^public:\//', '', $file_uri);
             $extension = pathinfo($file_uri, PATHINFO_EXTENSION);
+            // $file_uri = preg_replace('/\.[^.\s]+$/', '', $file_uri);
 
             // Save the relative path and font metadata in the configuration.
             $config
               ->set($field_name . '_file', $media_id)
-              ->set($field_name . '_path', $relative_path)
+              ->set($field_name . '_uri', $file_uri)
               ->set($field_name . '_family', $settings['family'] ?? '')
               ->set($field_name . '_style', $settings['style'] ?? '')
               ->set($field_name . '_weight', $settings['weight'] ?? '')
-              ->set($field_name . '_format', $extension );
+              ->set($field_name . '_format', $extension);
           } else {
             // Log a warning if the file entity is missing.
             $this->messenger()->addWarning($this->t('File entity not found for media ID: @id', ['@id' => $media_id]));
@@ -423,7 +422,7 @@ class ThemeSettingsForm extends ConfigFormBase
         // Clear configuration if no media is selected.
         $config
           ->clear($field_name . '_file')
-          ->clear($field_name . '_url')
+          ->clear($field_name . '_uri')
           ->clear($field_name . '_family')
           ->clear($field_name . '_style')
           ->clear($field_name . '_weight');

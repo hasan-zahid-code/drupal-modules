@@ -34,17 +34,17 @@ class ThemeSettingsJsonController extends ControllerBase {
     $font_metadata = [];
 
     foreach (self::$fontFields as $field_name => $label) {
-      $url = $config->get($field_name . '_path');
+      $file = $config->get($field_name . '_file');
 
       // Only add the font if the URL is present
-      if ($url) {
+      if ($file) {
         $font_metadata[] = [
           'family' => $config->get($field_name . '_family'),
           'style' => $config->get($field_name . '_style'),
           'weight' => $config->get($field_name . '_weight'),
           'format' => $config->get($field_name . '_format'),
-          'path' => $url,
-          'usage' => $field_name,
+          'uri' => $config->get($field_name . '_uri'),
+          'section' => $field_name,
         ];
       }
     }

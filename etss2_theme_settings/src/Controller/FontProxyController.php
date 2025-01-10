@@ -7,29 +7,34 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\Core\File\FileSystemInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class FontProxyController extends ControllerBase {
+class FontProxyController extends ControllerBase
+{
 
   protected $fileSystem;
 
-  public function __construct(FileSystemInterface $file_system) {
+  public function __construct(FileSystemInterface $file_system)
+  {
     $this->fileSystem = $file_system;
   }
 
-  public static function create(ContainerInterface $container) {
+  public static function create(ContainerInterface $container)
+  {
     return new static($container->get('file_system'));
   }
 
-  public function downloadFont($file_name) {
-    // Define the path to the font file in public:// directory
-    $file_path = 'public://' . $file_name;
+  public function downloadFont($file_name)
+  {
+    // Define the path to the font file in the public:// directory
+    $file_path = "public://font/$file_name";
 
     // Check if the file exists
-    if (!$this->fileSystem->realpath($file_path)) {
+    $real_path = $this->fileSystem->realpath($file_path);
+    if (!$real_path || !file_exists($real_path)) {
       throw new NotFoundHttpException('Font file not found');
     }
 
     // Get the file contents
-    $file_contents = file_get_contents($file_path);
+    $file_contents = file_get_contents($real_path);
 
     // Determine the file extension and set the correct content type
     $file_extension = pathinfo($file_name, PATHINFO_EXTENSION);
@@ -45,7 +50,8 @@ class FontProxyController extends ControllerBase {
   /**
    * Helper function to determine the correct font content type based on file extension.
    */
-  protected function getFontContentType($extension) {
+  protected function getFontContentType($extension)
+  {
     $content_types = [
       'woff' => 'font/woff',
       'woff2' => 'font/woff2',
