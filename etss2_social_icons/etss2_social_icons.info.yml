@@ -1,0 +1,10 @@
+name: 'ETSS2 Social Icons'
+type: module
+description: 'Provides a custom block, JSON API endpoint, and dynamic URLs for managing social icons with links.'
+core_version_requirement: ^10 || ^11
+package: Custom
+dependencies:
+  - drupal:block
+  - drupal:file
+  - drupal:media
+  - drupal:jsonapi

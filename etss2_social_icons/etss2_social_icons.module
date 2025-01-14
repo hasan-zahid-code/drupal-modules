@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * @file
+ * Provides shared functionality and hooks for the ETSS2 Social Icons module.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_help().
+ *
+ * Provides help information for the module.
+ */
+function etss2_social_icons_help($route_name, \Drupal\Core\Routing\RouteMatchInterface $route_match)
+{
+  if ($route_name === 'help.page.etss2_social_icons') {
+    return t('This module provides a custom block, JSON API endpoint, and dynamic URLs for managing social icons with links.');
+  }
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Performs actions upon module installation.
+ */
+/**
+ * Implements hook_install().
+ */
+function etss2_social_icons_install()
+{
+  // Define default values for the settings
+  $config = \Drupal::configFactory()->getEditable('etss2_social_icons.settings');
+
+  // Example: Default empty 'icons' array or some example icons
+  $config->set('icons', [])
+    ->save();
+
+  \Drupal::messenger()->addMessage(t('The ETSS2 Social Icons module has been installed.'));
+}
+
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Cleans up module-related data on uninstallation.
+ */
+function etss2_social_icons_uninstall()
+{
+  // Remove configuration specific to the module, if it exists.
+  $config_factory = \Drupal::configFactory();
+  if ($config_factory->getEditable('etss2_social_icons.settings')->get()) {
+    $config_factory->getEditable('etss2_social_icons.settings')->delete();
+  }
+
+  \Drupal::messenger()->addMessage(t('The ETSS2 Social Icons module has been uninstalled.'));
+}
+
+/**
+ * Example form validation for external integrations (optional).
+ *
+ * This is a placeholder function to demonstrate shared functionality.
+ *
+ * @param array $form
+ *   The form being processed.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   The form state.
+ */
+function etss2_social_icons_custom_validation(array &$form, FormStateInterface $form_state)
+{
+  // Validate example_field if it exists in the form.
+  if ($form_state->hasValue('example_field')) {
+    $example_value = $form_state->getValue('example_field');
+    if (empty($example_value)) {
+      $form_state->setErrorByName('example_field', t('The example field is required.'));
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function etss2_social_icons_theme() {
+  return [
+    'etss2_social_icons' => [
+      'template' => 'etss2_social_icons', // The name of the Twig template
+      'variables' => ['icons' => NULL], // Variables available in the template
+    ],
+  ];
+}
+

@@ -1,0 +1,221 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\media\Entity\Media;
+
+/**
+ * Implements hook_help().
+ *
+ * Provides a help page description for the module.
+ */
+function etss2_payment_gateway_icons_help($route_name, \Drupal\Core\Routing\RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.etss2_payment_gateway_icons':
+      return t('This module provides a custom block for adding and managing payment gateway icons.');
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ *
+ * Defines the block that displays payment gateway icons.
+ */
+function etss2_payment_gateway_icons_block_info() {
+  return [
+    'etss2_block_payment_icons' => [
+      'info' => t('ETSS2 Payment Gateway Icons Block'),
+      'description' => t('Displays payment gateway icons uploaded by the user.'),
+    ],
+  ];
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * Renders the payment gateway icons block content for display.
+ */
+function etss2_payment_gateway_icons_block_view($delta = '') {
+  if ($delta == 'etss2_block_payment_icons') {
+    $config = \Drupal::config('etss2_payment_gateway_icons.settings');
+    $icons = $config->get('icons') ?? [];
+
+    $rendered_icons = array_map(function ($icon) {
+      $file_url = '';
+      if (isset($icon['media_id']) && $media = Media::load($icon['media_id'])) {
+        $file_url = $media->get('field_media_image')->entity->createFileUrl();
+      }
+      return [
+        'icon_name' => $icon['icon_name'],
+        'url' => $file_url,
+      ];
+    }, $icons);
+
+    return [
+      'content' => [
+        '#theme' => 'etss2_payment_gateway_icons',
+        '#icons' => $rendered_icons,
+      ],
+    ];
+  }
+}
+
+/**
+ * Implements hook_form().
+ *
+ * Creates the configuration form for the payment gateway icons block.
+ */
+function etss2_payment_gateway_icons_block_form($form, FormStateInterface $form_state) {
+  $config = \Drupal::config('etss2_payment_gateway_icons.settings');
+  $icons = $form_state->get('icons') ?? $config->get('icons') ?? [];
+
+  if ($form_state->get('icons') === NULL) {
+    $form_state->set('icons', $icons);
+  }
+
+  $form['icons'] = [
+    '#type' => 'fieldset',
+    '#title' => t('Payment Gateway Icons'),
+    '#tree' => TRUE,
+    '#description' => t('Add or edit payment gateway icons uploaded as files. Browse existing icons from the media library or upload a new one.'),
+  ];
+
+  $form['icons']['items'] = [
+    '#type' => 'table',
+    '#header' => [
+      t('Merchant Name'),
+      t('Select from Media Library'),
+      t('Preview'),
+      t('Operations'),
+    ],
+  ];
+
+  foreach ($icons as $index => $icon) {
+    $preview_url = '';
+    if (!empty($icon['media_id']) && $media = Media::load($icon['media_id'])) {
+      $preview_url = $media->get('field_media_image')->entity->createFileUrl();
+    }
+
+    $form['icons']['items'][$index] = [
+      'icon_name' => [
+        '#type' => 'textfield',
+        '#title' => t('Merchant Name'),
+        '#title_display' => 'invisible',
+        '#default_value' => $icon['icon_name'] ?? '',
+        '#description' => t('Enter the name of the payment gateway (e.g., Visa, MasterCard, AMEX). Only alphanumeric characters and spaces are allowed.'),
+        '#required' => TRUE,
+        '#maxlength' => 50,
+        '#element_validate' => [
+          'etss2_payment_gateway_icons_validate_icon_name',
+        ],
+      ],
+      'media_id' => [
+        '#type' => 'entity_autocomplete',
+        '#title' => t('Select Icon from Media Library'),
+        '#title_display' => 'invisible',
+        '#target_type' => 'media',
+        '#selection_handler' => 'default:media',
+        '#selection_settings' => [
+          'target_bundles' => ['image'], // Restrict to image media types.
+        ],
+        '#default_value' => isset($icon['media_id']) ? Media::load($icon['media_id']) : NULL,
+        '#description' => t('Select an existing icon from the media library.'),
+        '#ajax' => [
+          'callback' => 'etss2_payment_gateway_icons_preview_callback',
+          'wrapper' => "icon-preview-$index",
+        ],
+      ],
+      'preview' => [
+        '#type' => 'markup',
+        '#markup' => $preview_url ? '<img src="' . $preview_url . '" alt="Icon Preview" style="max-width: 50px; max-height: 50px;" />' : t('No preview available'),
+        '#prefix' => '<div id="icon-preview-' . $index . '">',
+        '#suffix' => '</div>',
+      ],
+      'remove' => [
+        '#type' => 'submit',
+        '#value' => t('Remove'),
+        '#name' => "remove_$index",
+        '#submit' => ['::removeIconCallback'],
+        '#limit_validation_errors' => [],
+        '#ajax' => [
+          'callback' => '::updateFormCallback',
+          'wrapper' => 'payment-icons-wrapper',
+        ],
+      ],
+    ];
+  }
+
+  $form['icons']['add'] = [
+    '#type' => 'submit',
+    '#value' => t('Add Icon'),
+    '#submit' => ['::addIconCallback'],
+    '#ajax' => [
+      'callback' => '::updateFormCallback',
+      'wrapper' => 'payment-icons-wrapper',
+    ],
+  ];
+
+  $form['#prefix'] = '<div id="payment-icons-wrapper">';
+  $form['#suffix'] = '</div>';
+
+  return $form;
+}
+
+/**
+ * Custom validation for the merchant name field.
+ */
+function etss2_payment_gateway_icons_validate_icon_name($element, FormStateInterface $form_state, $form) {
+  if (!preg_match('/^[a-zA-Z0-9 ]+$/', $element['#value'])) {
+    $form_state->setError($element, t('The merchant name must only contain alphanumeric characters and spaces.'));
+  }
+}
+
+/**
+ * Ajax callback to dynamically update the icon preview.
+ */
+function etss2_payment_gateway_icons_preview_callback(array &$form, FormStateInterface $form_state) {
+  $triggering_element = $form_state->getTriggeringElement();
+  $parents = $triggering_element['#parents'];
+  $index = $parents[2]; // Assumes structure: icons -> items -> index.
+
+  return $form['icons']['items'][$index]['preview'];
+}
+
+/**
+ * Form submit handler to add a new icon row.
+ */
+function etss2_payment_gateway_icons_addIconCallback(array &$form, FormStateInterface $form_state) {
+  $icons = $form_state->get('icons');
+  $icons[] = []; // Add a new empty row.
+  $form_state->set('icons', $icons);
+  $form_state->setRebuild();
+}
+
+/**
+ * Form submit handler to remove an icon row.
+ */
+function etss2_payment_gateway_icons_removeIconCallback(array &$form, FormStateInterface $form_state) {
+  $triggering_element = $form_state->getTriggeringElement();
+  $index = explode('_', $triggering_element['#name'])[1]; // Extract index.
+  $icons = $form_state->get('icons');
+  unset($icons[$index]);
+  $form_state->set('icons', array_values($icons)); // Reindex the array.
+  $form_state->setRebuild();
+}
+
+/**
+ * Ajax callback to rebuild the form.
+ */
+function etss2_payment_gateway_icons_updateFormCallback(array &$form, FormStateInterface $form_state) {
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ *
+ * Handles form submission and saves the payment gateway icons configuration.
+ */
+function etss2_payment_gateway_icons_block_form_submit($form, FormStateInterface $form_state) {
+  $icons = $form_state->getValue(['icons', 'items']);
+  $config = \Drupal::service('config.factory')->getEditable('etss2_payment_gateway_icons.settings');
+  $config->set('icons', $icons)->save();
+}

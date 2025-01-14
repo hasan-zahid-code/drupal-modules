@@ -1,0 +1,10 @@
+name: 'ETSS2 Payment Gateway Icons'
+type: module
+description: 'Provides a custom block for managing and displaying payment gateway icons with links to media library integration.'
+core_version_requirement: ^11
+package: Custom
+dependencies:
+  - drupal:block
+  - drupal:file
+  - drupal:media
+  - drupal:jsonapi

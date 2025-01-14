@@ -1,0 +1,16 @@
+etss2_social_icons.jsonapi:
+  path: '/jsonapi/social-icons'
+  defaults:
+    _controller: '\Drupal\etss2_social_icons\Controller\SocialIconsController::getSocialIcons'
+    _title: 'Social Icons JSON API'
+  requirements:
+    _permission: 'access content'
+
+etss2_social_icons.icon_serve:
+  path: '/social-icons/icon/{file_name}'
+  defaults:
+    _controller: '\Drupal\etss2_social_icons\Controller\SocialIconFileController::serveFile'
+    _title: 'Social Icon File'
+  requirements:
+    _permission: 'access content'
+    file_name: '.+'
