@@ -1,7 +1,7 @@
 <div class="etss2_social_icons" style="display: flex; gap: 10px; flex-wrap: wrap;">
   {% for icon in icons %}
     <a href="{{ icon.link }}" target="_blank" rel="noopener noreferrer" class="social-icon-link">
-      <img src="{{ icon.url }}" alt="{{ icon.icon }}" title="{{ icon.icon }}" class="social-icon-image" style="max-width: 20px; max-height: 20px;" />
+      <img src="{{ icon.url }}" alt="{{ icon.icon }}" title="{{ icon.icon }}" class="social-icon-image" style="max-width: 40px; max-height: 40px;" />
     </a>
   {% else %}
     <p>{{ 'No social icons are available at the moment.'|t }}</p>

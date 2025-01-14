@@ -32,50 +32,42 @@ class SocialIconsBlock extends BlockBase
     // Load the block configuration.
     $config = \Drupal::config('block.block.olivero_etss2socialiconsblock');
     $icons = $config->get('settings.icons') ?? [];
-    $this->getS3FileBaseUrl();
+
     // Prepare rendered icons for the block.
     $rendered_icons = array_map(function ($icon) {
       $file_url = '';
 
-      // Debugging: Log the media_id and icon information.
-      // \Drupal::messenger()->addMessage('Processing icon: ' . print_r($icon, TRUE), MessengerInterface::TYPE_STATUS);
-
-      if (isset($icon['media_id'])) {
-        // Use the entity type manager to load the media entity.
+      if (isset($icon['media_id']) && !empty($icon['media_id'])) {
+        // Load the media entity using the entity type manager.
         $media_storage = \Drupal::entityTypeManager()->getStorage('media');
-        $media = $media_storage->load($icon['media_id']);  // Load the media entity
+        $media = $media_storage->load($icon['media_id']);
 
-        if ($media && $media->hasField('field_media_image')) {
-          // Access the file entity associated with the media field.
-          $image_field = $media->get('field_media_image')->first(); // Get the first image from the field
-          if ($image_field) {
-            $file = $image_field->entity;  // Get the file entity
-            if ($file) {
-              $file_url = preg_replace('/^public:\//', '', $file->getFileUri());
-              $file_url = '/sites/default/files' . $file_url;
+        if ($media && $media->hasField('thumbnail')) {
+          // Get the file entity associated with the field.
+          $file = $media->get('thumbnail')->entity;
 
-              $file_url = urldecode($file_url);
-            }
+          if ($file) {
+            // Get the file URI.
+            $file_uri = $file->getFileUri();
+
+            // Generate the full S3 URL.
+            $file_url = $this->getS3FileUrl($file_uri);
           }
         }
       }
 
-      // Debugging: Output the final URL and icon info.
-      // \Drupal::messenger()->addMessage('Generated file URL: ' . $file_url, MessengerInterface::TYPE_STATUS);
-
       return [
         'icon' => htmlspecialchars($icon['icon'], ENT_QUOTES, 'UTF-8'),
-        'link' => Url::fromUri($icon['link'])->toString(), // Ensure URL is properly handled
-        'url' => 'huiu', // Full URL of the media image.
+        'link' => Url::fromUri($icon['link'])->toString(),
+        'url' => $file_url,
       ];
-
     }, $icons);
 
     return [
       '#theme' => 'etss2_social_icons',
       '#icons' => $rendered_icons,
       '#cache' => [
-        'max-age' => 36000,
+        'max-age' => 0,
       ],
     ];
   }
@@ -203,16 +195,20 @@ class SocialIconsBlock extends BlockBase
     return $form['icons'];
   }
 
-  public function getS3FileBaseUrl()
+
+  protected function getS3FileUrl($file_uri)
   {
-    $s3_settings = \Drupal::config('s3fs.settings');
+    $s3_config = \Drupal::config('s3fs.settings'); // For S3 configuration
 
-    $s3_url = $s3_settings->get('bucket') ?? '';
-    $s3_prefix = $s3_settings->get('prefix') ?? '';
+    $bucket_name = $s3_config->get('bucket');
 
-    $s3_file_base_url = $s3_url ? 'https://' . $s3_url . '/' . $s3_prefix : '';
+    $s3_base_url = 'https://' . $bucket_name . '.s3.amazonaws.com/';
 
-    return $s3_file_base_url;
+    // Clean the file URI by removing the "s3://" or "public://" prefix.
+    $clean_file_uri = preg_replace('/^(s3:|public:)\//', '', $file_uri);
+
+    // Return the full S3 URL.
+    return rtrim($s3_base_url, '/') . '/' . ltrim($clean_file_uri, '/');
   }
 
 }

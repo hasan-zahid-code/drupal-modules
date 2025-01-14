@@ -29,12 +29,12 @@ function etss2_social_icons_help($route_name, \Drupal\Core\Routing\RouteMatchInt
  */
 function etss2_social_icons_install()
 {
-  // Define default values for the settings
-  $config = \Drupal::configFactory()->getEditable('etss2_social_icons.settings');
+  // // Define default values for the settings
+  // $config = \Drupal::configFactory()->getEditable('etss2_social_icons.settings');
 
-  // Example: Default empty 'icons' array or some example icons
-  $config->set('icons', [])
-    ->save();
+  // // Example: Default empty 'icons' array or some example icons
+  // $config->set('icons', [])
+  //   ->save();
 
   \Drupal::messenger()->addMessage(t('The ETSS2 Social Icons module has been installed.'));
 }
@@ -48,34 +48,14 @@ function etss2_social_icons_install()
 function etss2_social_icons_uninstall()
 {
   // Remove configuration specific to the module, if it exists.
-  $config_factory = \Drupal::configFactory();
-  if ($config_factory->getEditable('etss2_social_icons.settings')->get()) {
-    $config_factory->getEditable('etss2_social_icons.settings')->delete();
-  }
+  // $config_factory = \Drupal::configFactory();
+  // if ($config_factory->getEditable('etss2_social_icons.settings')->get()) {
+  //   $config_factory->getEditable('etss2_social_icons.settings')->delete();
+  // }
 
   \Drupal::messenger()->addMessage(t('The ETSS2 Social Icons module has been uninstalled.'));
 }
 
-/**
- * Example form validation for external integrations (optional).
- *
- * This is a placeholder function to demonstrate shared functionality.
- *
- * @param array $form
- *   The form being processed.
- * @param \Drupal\Core\Form\FormStateInterface $form_state
- *   The form state.
- */
-function etss2_social_icons_custom_validation(array &$form, FormStateInterface $form_state)
-{
-  // Validate example_field if it exists in the form.
-  if ($form_state->hasValue('example_field')) {
-    $example_value = $form_state->getValue('example_field');
-    if (empty($example_value)) {
-      $form_state->setErrorByName('example_field', t('The example field is required.'));
-    }
-  }
-}
 
 /**
  * Implements hook_theme().
