@@ -19,8 +19,8 @@ class SocialIconsController extends ControllerBase {
    */
   public function getSocialIcons() {
     // Load the configuration for social icons.
-    $config = $this->config('etss2_social_icons.settings');
-    $icons = $config->get('icons') ?? [];
+    $config = \Drupal::config('block.block.etss2_social_icons_block');
+    $icons = $config->get('settings.icons') ?? [];
 
     // Prepare the data for JSON output.
     $data = array_map(function ($icon) {
@@ -28,7 +28,7 @@ class SocialIconsController extends ControllerBase {
       if (isset($icon['media_id']) && $media = Media::load($icon['media_id'])) {
         // Get the media name and create a dynamic URL for the file.
         $file_name = $media->getName();
-        $icon_url = '/social-icons/icon/' . $file_name;
+        $icon_url = '/icon/social-icons/' . $file_name;
       }
       return [
         'platform' => $icon['icon'],

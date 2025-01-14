@@ -7,10 +7,10 @@ etss2_social_icons.jsonapi:
     _permission: 'access content'
 
 etss2_social_icons.icon_serve:
-  path: '/social-icons/icon/{file_name}'
+  path: '/icon/social-icons/{file_name}'
   defaults:
     _controller: '\Drupal\etss2_social_icons\Controller\SocialIconFileController::serveFile'
     _title: 'Social Icon File'
   requirements:
     _permission: 'access content'
-    file_name: '.+'
+    file_name: '[a-zA-Z0-9-_\.]+' 

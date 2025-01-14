@@ -6,14 +6,12 @@ use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Url;
-use Drupal\file\Entity\File;
-use Drupal\media\Entity\Media;
 
 /**
  * Provides a 'Social Icons Block'.
  *
  * @Block(
- *   id = "etss2_social_icons_block",
+ *   id = "etss2_social_icons",
  *   admin_label = @Translation("ETSS2 Social Icons Block"),
  *   category = @Translation("Custom")
  * )
@@ -30,7 +28,7 @@ class SocialIconsBlock extends BlockBase
   public function build()
   {
     // Load the block configuration.
-    $config = \Drupal::config('block.block.olivero_etss2socialiconsblock');
+    $config = \Drupal::config('block.block.etss2_social_icons_block');
     $icons = $config->get('settings.icons') ?? [];
 
     // Prepare rendered icons for the block.
@@ -79,64 +77,116 @@ class SocialIconsBlock extends BlockBase
    */
   public function blockForm($form, FormStateInterface $form_state)
   {
+
     $config = $this->getConfiguration();
     $icons = $form_state->get('icons') ?? $config['icons'] ?? [];
 
     $form['icons'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Social Icons'),
+      '#type' => 'container',
       '#tree' => TRUE,
-      '#description' => $this->t('Add or edit social icons with their links. You can upload a new icon or select one from the Media Library.'),
-      '#prefix' => '<div id="social-icons-wrapper">',
-      '#suffix' => '</div>',
     ];
+
 
     foreach ($icons as $index => $icon) {
       $form['icons'][$index] = [
-        'icon' => [
-          '#type' => 'textfield',
-          '#title' => $this->t('Platform Name'),
-          '#default_value' => $icon['icon'] ?? '',
-          '#description' => $this->t('Enter the name of the social platform (e.g., Facebook, Twitter). Only alphanumeric characters and spaces are allowed.'),
-          '#maxlength' => 50,
-          '#required' => TRUE,
-          '#element_validate' => [[$this, 'validateIconName']],
-        ],
-        'link' => [
-          '#type' => 'url',
-          '#title' => $this->t('Platform URL'),
-          '#default_value' => $icon['link'] ?? '',
-          '#description' => $this->t('Provide a valid URL (e.g., https://facebook.com).'),
-          '#required' => TRUE,
-          '#element_validate' => [[$this, 'validateUrl']],
-        ],
-        'media_id' => [
-          '#type' => 'media_library',
-          '#title' => $this->t('Select Icon from Media Library'),
-          '#allowed_bundles' => ['social_icons'],
-          '#description' => $this->t('Select an existing icon from the media library or upload a new one.'),
-          '#default_value' => $icon['media_id'] ?? NULL,
-          '#required' => TRUE,
-        ],
+        '#type' => 'details',
+        '#title' => $icon['icon'] ?? $this->t('Add new Social Icon'),
+        '#open' => false,
+      ];
 
+      $form['icons'][$index]['icon'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Platform Name'),
+        '#default_value' => $icon['icon'] ?? '',
+        '#description' => $this->t('Enter the name of the social platform.'),
+        '#maxlength' => 50,
+        '#required' => TRUE,
+      ];
+
+      $form['icons'][$index]['link'] = [
+        '#type' => 'url',
+        '#title' => $this->t('Platform URL'),
+        '#default_value' => $icon['link'] ?? '',
+        '#description' => $this->t('Provide a valid URL.'),
+        '#required' => TRUE,
+      ];
+
+      $form['icons'][$index]['media_id'] = [
+        '#type' => 'media_library',
+        '#title' => $this->t('Select Icon from Media Library'),
+        '#allowed_bundles' => ['social_icons'],
+        '#default_value' => $icon['media_id'] ?? NULL,
+        '#required' => TRUE,
+      ];
+
+      // Remove Icon Button
+      $form['icons'][$index]['remove_icon'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Remove Icon'),
+        '#name' => 'remove_icon_' . $index,
+        '#submit' => [[$this, 'removeIconSubmit']],
+        '#ajax' => [
+          'callback' => [$this, 'ajaxCallback'],
+        ],
       ];
     }
 
-    // Add a button to dynamically add more icons.
+    // Add Icon Button
     $form['add_icon'] = [
       '#type' => 'submit',
       '#value' => $this->t('Add Social Icon'),
       '#submit' => [[$this, 'addIconSubmit']],
       '#ajax' => [
-        'callback' => '::ajaxCallback',
-        'wrapper' => 'social-icons-wrapper',
+        'callback' => [$this, 'ajaxCallback'],
       ],
-
     ];
-
 
     return $form;
   }
+
+  public function addIconSubmit(array &$form, FormStateInterface $form_state)
+  {
+    $icons = $form_state->get('icons') ?? [];
+    $icons[] = [
+      'icon' => '',
+      'link' => '',
+      'media_id' => NULL,
+    ];
+    $form_state->set('icons', $icons);
+    $form_state->setRebuild();
+  }
+
+  public function removeIconSubmit(array &$form, FormStateInterface $form_state)
+  {
+    $triggering_element = $form_state->getTriggeringElement();
+    $button_name = $triggering_element['#name'];
+
+    // Extract the index from the button name (e.g., "remove_icon_1")
+    if (preg_match('/remove_icon_(\d+)/', $button_name, $matches)) {
+      $index = $matches[1];
+      $icons = $form_state->get('icons') ?? [];
+      unset($icons[$index]); // Remove the specific icon
+      $icons = array_values($icons); // Reindex the array
+      $form_state->set('icons', $icons);
+      $form_state->setRebuild();
+    }
+  }
+
+  public function ajaxCallback(array &$form, FormStateInterface $form_state)
+{
+    // Log the form state to confirm icons exist
+    // \Drupal::logger('etss2_social_icons')->debug('<pre>' . print_r($form_state->getValues(), TRUE) . '</pre>');
+
+    // Ensure the icons container exists
+    if (isset($form['icons'])) {
+        return $form['icons'];
+    }
+
+    // Log an error when icons container is not found
+    \Drupal::logger('etss2_social_icons')->error('Icons container not found in the form. Triggering page reload.');
+
+    return $form;
+}
 
   /**
    * {@inheritdoc}
@@ -151,50 +201,22 @@ class SocialIconsBlock extends BlockBase
   /**
    * Custom validation for the platform name field.
    */
-  public function validateIconName($element, FormStateInterface $form_state)
-  {
-    if (!preg_match('/^[a-zA-Z0-9 ]+$/', $element['#value'])) {
-      $form_state->setError($element, $this->t('The platform name must only contain alphanumeric characters and spaces.'));
-    }
-  }
+  // public function validateIconName($element, FormStateInterface $form_state)
+  // {
+  //   if (!preg_match('/^[a-zA-Z0-9 ]+$/', $element['#value'])) {
+  //     $form_state->setError($element, $this->t('The platform name must only contain alphanumeric characters and spaces.'));
+  //   }
+  // }
 
-  /**
-   * Custom validation for the URL field.
-   */
-  public function validateUrl($element, FormStateInterface $form_state)
-  {
-    if (!filter_var($element['#value'], FILTER_VALIDATE_URL)) {
-      $form_state->setError($element, $this->t('The URL provided is not valid. Please enter a valid URL.'));
-    }
-  }
-
-  /**
-   * Adds a new icon dynamically when the "Add Social Icon" button is clicked.
-   */
-  public function addIconSubmit(array &$form, FormStateInterface $form_state)
-  {
-    $icons = $form_state->get('icons') ?? [];
-    $icons[] = [
-      'icon' => '',
-      'link' => '',
-      'media_id' => NULL,
-    ];
-    $form_state->set('icons', $icons);
-    $form_state->setRebuild();
-    \Drupal::logger('etss2_social_icons')->debug('AJAX callback triggered.');
-    \Drupal::logger('etss2_social_icons')->debug('Form state: @state', ['@state' => print_r($form_state->get('icons'), TRUE)]);
-
-  }
-
-  public function ajaxCallback(array &$form, FormStateInterface $form_state)
-  {
-    \Drupal::logger('etss2_social_icons')->debug('AJAX callback triggered.');
-    \Drupal::logger('etss2_social_icons')->debug('Form state: @state', ['@state' => print_r($form_state->get('icons'), TRUE)]);
-
-    // Return the full form element for the `icons` fieldset wrapped in the div with `id="social-icons-wrapper"`.
-    return $form['icons'];
-  }
-
+  // /**
+  //  * Custom validation for the URL field.
+  //  */
+  // public function validateUrl($element, FormStateInterface $form_state)
+  // {
+  //   if (!filter_var($element['#value'], FILTER_VALIDATE_URL)) {
+  //     $form_state->setError($element, $this->t('The URL provided is not valid. Please enter a valid URL.'));
+  //   }
+  // }
 
   protected function getS3FileUrl($file_uri)
   {
