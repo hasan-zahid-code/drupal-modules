@@ -1,0 +1,7 @@
+<div class="payment-gateway-icons" style="display: flex; flex-wrap: wrap; gap: 10px;">
+  {% for icon in icons %}
+    <div class="payment-gateway-icon" style="flex: 0 0 auto; text-align: center;">
+      <img src="{{ icon.url }}" alt="{{ icon.merchant }}" title="{{ icon.icon_name }}" style="max-width: 50px; max-height: 50px;" />
+    </div>
+  {% endfor %}
+</div>

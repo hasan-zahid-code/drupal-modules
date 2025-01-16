@@ -28,8 +28,8 @@ class SocialIconsBlock extends BlockBase
   public function build()
   {
     // Load the block configuration.
-    $config = \Drupal::config('block.block.etss2_social_icons_block');
-    $icons = $config->get('settings.icons') ?? [];
+    $config = $this->getConfiguration();
+    $icons = $config['icons'] ?? [];
 
     // Prepare rendered icons for the block.
     $rendered_icons = array_map(function ($icon) {
@@ -77,20 +77,24 @@ class SocialIconsBlock extends BlockBase
    */
   public function blockForm($form, FormStateInterface $form_state)
   {
-
-    $config = $this->getConfiguration();
-    $icons = $form_state->get('icons') ?? $config['icons'] ?? [];
+    // Fetch the current icons from the form state or configuration.
+    if (!$form_state->has('icons')) {
+      $form_state->set('icons', $this->getConfiguration()['icons'] ?? []);
+    }
+    $icons = $form_state->get('icons');
 
     $form['icons'] = [
-      '#type' => 'container',
+      '#type' => 'fieldset',
       '#tree' => TRUE,
+      '#title' => t('Social Media Icons'),
+      '#description' => t('Add or edit social media icons uploaded as files. Browse existing icons from the media library or upload a new one.'),
     ];
 
 
     foreach ($icons as $index => $icon) {
       $form['icons'][$index] = [
         '#type' => 'details',
-        '#title' => $icon['icon'] ?? $this->t('Add new Social Icon'),
+        '#title' => $icon['icon'] == '' ? $this->t('New Social Icon') : $icon['icon'],
         '#open' => false,
       ];
 
@@ -114,7 +118,7 @@ class SocialIconsBlock extends BlockBase
       $form['icons'][$index]['media_id'] = [
         '#type' => 'media_library',
         '#title' => $this->t('Select Icon from Media Library'),
-        '#allowed_bundles' => ['social_icons'],
+        '#allowed_bundles' => ['icon'],
         '#default_value' => $icon['media_id'] ?? NULL,
         '#required' => TRUE,
       ];
@@ -123,10 +127,11 @@ class SocialIconsBlock extends BlockBase
       $form['icons'][$index]['remove_icon'] = [
         '#type' => 'submit',
         '#value' => $this->t('Remove Icon'),
-        '#name' => 'remove_icon_' . $index,
+        '#name' => "remove_icon_$index",
         '#submit' => [[$this, 'removeIconSubmit']],
         '#ajax' => [
           'callback' => [$this, 'ajaxCallback'],
+          'wrapper' => 'block-form',
         ],
       ];
     }
@@ -138,6 +143,7 @@ class SocialIconsBlock extends BlockBase
       '#submit' => [[$this, 'addIconSubmit']],
       '#ajax' => [
         'callback' => [$this, 'ajaxCallback'],
+        'wrapper' => 'block-form',
       ],
     ];
 
@@ -159,34 +165,21 @@ class SocialIconsBlock extends BlockBase
   public function removeIconSubmit(array &$form, FormStateInterface $form_state)
   {
     $triggering_element = $form_state->getTriggeringElement();
-    $button_name = $triggering_element['#name'];
+    $index = explode('_', $triggering_element['#name'])[1]; // Extract index.
 
-    // Extract the index from the button name (e.g., "remove_icon_1")
-    if (preg_match('/remove_icon_(\d+)/', $button_name, $matches)) {
-      $index = $matches[1];
-      $icons = $form_state->get('icons') ?? [];
-      unset($icons[$index]); // Remove the specific icon
-      $icons = array_values($icons); // Reindex the array
-      $form_state->set('icons', $icons);
-      $form_state->setRebuild();
-    }
+    $icons = $form_state->get('icons') ?? [];
+    unset($icons[$index]); // Remove the specific icon
+
+    $icons = array_values($icons); // Reindex the array
+    $form_state->set('icons', $icons);
+    $form_state->setRebuild();
+
   }
 
   public function ajaxCallback(array &$form, FormStateInterface $form_state)
-{
-    // Log the form state to confirm icons exist
-    // \Drupal::logger('etss2_social_icons')->debug('<pre>' . print_r($form_state->getValues(), TRUE) . '</pre>');
-
-    // Ensure the icons container exists
-    if (isset($form['icons'])) {
-        return $form['icons'];
-    }
-
-    // Log an error when icons container is not found
-    \Drupal::logger('etss2_social_icons')->error('Icons container not found in the form. Triggering page reload.');
-
+  {
     return $form;
-}
+  }
 
   /**
    * {@inheritdoc}
@@ -199,24 +192,14 @@ class SocialIconsBlock extends BlockBase
   }
 
   /**
-   * Custom validation for the platform name field.
+   * Custom validation for the URL field.
    */
-  // public function validateIconName($element, FormStateInterface $form_state)
-  // {
-  //   if (!preg_match('/^[a-zA-Z0-9 ]+$/', $element['#value'])) {
-  //     $form_state->setError($element, $this->t('The platform name must only contain alphanumeric characters and spaces.'));
-  //   }
-  // }
-
-  // /**
-  //  * Custom validation for the URL field.
-  //  */
-  // public function validateUrl($element, FormStateInterface $form_state)
-  // {
-  //   if (!filter_var($element['#value'], FILTER_VALIDATE_URL)) {
-  //     $form_state->setError($element, $this->t('The URL provided is not valid. Please enter a valid URL.'));
-  //   }
-  // }
+  public function validateUrl($element, FormStateInterface $form_state)
+  {
+    if (!filter_var($element['#value'], FILTER_VALIDATE_URL)) {
+      $form_state->setError($element, $this->t('The URL provided is not valid. Please enter a valid URL.'));
+    }
+  }
 
   protected function getS3FileUrl($file_uri)
   {
@@ -227,10 +210,10 @@ class SocialIconsBlock extends BlockBase
     $s3_base_url = 'https://' . $bucket_name . '.s3.amazonaws.com/';
 
     // Clean the file URI by removing the "s3://" or "public://" prefix.
-    $clean_file_uri = preg_replace('/^(s3:|public:)\//', '', $file_uri);
+    $file_uri = preg_replace('/^(s3:|public:)\/\//', '', $file_uri);
 
     // Return the full S3 URL.
-    return rtrim($s3_base_url, '/') . '/' . ltrim($clean_file_uri, '/');
+    return $s3_base_url . $file_uri;
   }
 
 }

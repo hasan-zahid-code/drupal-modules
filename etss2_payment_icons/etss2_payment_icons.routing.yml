@@ -1,0 +1,16 @@
+# etss2_payment_icons.jsonapi:
+#   path: '/jsonapi/payment-icons'
+#   defaults:
+#     _controller: '\Drupal\etss2_payment_icons\Controller\PaymentIconsController::getSocialIcons'
+#     _title: 'Payment Icons JSON API'
+#   requirements:
+#     _permission: 'access content'
+
+# etss2_payment_icons.icon_serve:
+#   path: '/icon/payment-icons/{file_name}'
+#   defaults:
+#     _controller: '\Drupal\etss2_payment_icons\Controller\PaymentIconFileController::serveFile'
+#     _title: 'Payment Icon File'
+#   requirements:
+#     _permission: 'access content'
+#     file_name: '[a-zA-Z0-9-_\.]+' 
