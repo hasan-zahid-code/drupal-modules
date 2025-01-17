@@ -49,7 +49,7 @@ class SocialIconsBlock extends BlockBase
             $file_uri = $file->getFileUri();
 
             // Generate the full S3 URL.
-            $file_url = $this->getS3FileUrl($file_uri);
+            $file_url = $this->getFileUrl($file_uri);
           }
         }
       }
@@ -201,20 +201,33 @@ class SocialIconsBlock extends BlockBase
     }
   }
 
-  protected function getS3FileUrl($file_uri)
+  protected function getFileUrl($file_uri)
   {
-    $s3_config = \Drupal::config('s3fs.settings'); // For S3 configuration
+    // Check if the file URI contains 's3://'.
+    if (str_starts_with($file_uri, 's3://')) {
+      $s3_config = \Drupal::config('s3fs.settings');
+      $bucket_name = $s3_config->get('bucket');
 
-    $bucket_name = $s3_config->get('bucket');
+      if (!$bucket_name) {
+        throw new \Exception('S3 bucket name is not configured.');
+      }
 
-    $s3_base_url = 'https://' . $bucket_name . '.s3.amazonaws.com/';
+      $s3_base_url = 'https://' . $bucket_name . '.s3.amazonaws.com/';
 
-    // Clean the file URI by removing the "s3://" or "public://" prefix.
-    $file_uri = preg_replace('/^(s3:|public:)\/\//', '', $file_uri);
+      $clean_uri = str_replace('s3://', '', $file_uri);
 
-    // Return the full S3 URL.
-    return $s3_base_url . $file_uri;
+      return $s3_base_url . $clean_uri;
+    } elseif (str_starts_with($file_uri, 'public://')) {
+      $public_base_url = \Drupal::service('file_system')->getSchemeWrapper('public');
+
+      $clean_uri = str_replace('public://', '', $file_uri);
+
+      return $public_base_url . $clean_uri;
+    } else {
+      throw new \Exception('Unsupported URI scheme: ' . $file_uri);
+    }
   }
+
 
 }
 

@@ -23,29 +23,32 @@ class FontProxyController extends ControllerBase
   }
 
   public function downloadFont($file_name)
-  {
-    // Define the path to the font file in the public:// directory
-    $file_path = "public://font/$file_name";
-
-    // Check if the file exists
-    $real_path = $this->fileSystem->realpath($file_path);
-    if (!$real_path || !file_exists($real_path)) {
+{
+    $file_path = 's3://font/' . $file_name;
+    // \Drupal::logger('FontProxyController')->debug('S3 file path: @path', ['@path' => $file_path]);
+    
+    // Check if the file exists on S3.
+    if (!file_exists($file_path)) {
       throw new NotFoundHttpException('Font file not found');
     }
+    
+    // Get the file contents from S3.
+    $file_contents = file_get_contents($file_path);
 
-    // Get the file contents
-    $file_contents = file_get_contents($real_path);
+    if ($file_contents === false) {
+        throw new NotFoundHttpException('Unable to read the font file');
+    }
 
-    // Determine the file extension and set the correct content type
+    // Determine the file extension and set the correct content type.
     $file_extension = pathinfo($file_name, PATHINFO_EXTENSION);
     $content_type = $this->getFontContentType($file_extension);
 
-    // Return the file response
+    // Return the file response.
     return new Response($file_contents, 200, [
-      'Content-Type' => $content_type,
-      'Content-Disposition' => 'inline; filename="' . $file_name . '"',
+        'Content-Type' => $content_type,
+        'Content-Disposition' => 'inline; filename="' . $file_name . '"',
     ]);
-  }
+}
 
   /**
    * Helper function to determine the correct font content type based on file extension.
@@ -60,6 +63,6 @@ class FontProxyController extends ControllerBase
       'eot' => 'application/vnd.ms-fontobject',
     ];
 
-    return isset($content_types[$extension]) ? $content_types[$extension] : 'application/octet-stream';
+    return $content_types[$extension] ?? 'application/octet-stream';
   }
 }

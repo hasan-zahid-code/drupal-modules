@@ -1,25 +1,25 @@
 <?php
 
-namespace Drupal\etss2_social_icons\Controller;
+namespace Drupal\etss2_payment_icons\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\media\Entity\Media;
 
 /**
- * Provides a JSON response for social icons.
+ * Provides a JSON response for payment icons.
  */
-class SocialIconsController extends ControllerBase {
+class PaymentIconsController extends ControllerBase {
 
   /**
-   * Fetch and return social icons as a JSON response.
+   * Fetch and return payment icons as a JSON response.
    *
    * @return \Symfony\Component\HttpFoundation\JsonResponse
-   *   The JSON response containing social icons data.
+   *   The JSON response containing payment icons data.
    */
-  public function getSocialIcons() {
-    // Load the configuration for social icons.
-    $config = \Drupal::config('block.block.etss2_social_icons_block');
+  public function getPaymentIcons() {
+    // Load the configuration for payment icons.
+    $config = \Drupal::config('block.block.etss2_payment_icons');
     $icons = $config->get('settings.icons') ?? [];
 
     // Prepare the data for JSON output.
@@ -28,11 +28,10 @@ class SocialIconsController extends ControllerBase {
       if (isset($icon['media_id']) && $media = Media::load($icon['media_id'])) {
         // Get the media name and create a dynamic URL for the file.
         $file_name = $media->getName();
-        $icon_url = '/icon/social-icons/' . $file_name;
+        $icon_url = '/icon/payment-icons/' . $file_name;
       }
       return [
-        'platform' => $icon['icon'],
-        'url' => $icon['link'],
+        'merchant' => $icon['merchant'],
         'icon_url' => $icon_url,
       ];
     }, $icons);

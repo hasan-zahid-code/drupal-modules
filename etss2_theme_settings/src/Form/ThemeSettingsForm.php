@@ -398,14 +398,13 @@ class ThemeSettingsForm extends ConfigFormBase
 
           if ($file) {
             $file_uri = $file->getFileUri();
-            $file_uri = preg_replace('/^public:\//', '', $file_uri);
+            $file_uri = preg_replace('/^(public:|s3:)\//', '', $file_uri);
             $extension = pathinfo($file_uri, PATHINFO_EXTENSION);
-            // $file_uri = preg_replace('/\.[^.\s]+$/', '', $file_uri);
 
             // Save the relative path and font metadata in the configuration.
             $config
               ->set($field_name . '_file', $media_id)
-              ->set($field_name . '_uri', $file_uri)
+              ->set($field_name . '_uri', '/theme-settings'.$file_uri)
               ->set($field_name . '_family', $settings['family'] ?? '')
               ->set($field_name . '_style', $settings['style'] ?? '')
               ->set($field_name . '_weight', $settings['weight'] ?? '')
@@ -416,7 +415,7 @@ class ThemeSettingsForm extends ConfigFormBase
           }
         } else {
           // Log a warning if the media entity or field is invalid.
-          $this->messenger()->addWarning($this->t('Invalid media entity or missing file field for media ID: @id', ['@id' => $media_id]));
+          $this->messenger()->addWarning($this->t('Invalid media entity or missing file for media ID: @id', ['@id' => $media_id]));
         }
       } else {
         // Clear configuration if no media is selected.

@@ -1,5 +1,5 @@
 <?php
-namespace Drupal\etss2_social_icons\Controller;
+namespace Drupal\etss2_payment_icons\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\Response;
@@ -7,12 +7,12 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Serves social icon files dynamically.
+ * Serves payment icon files dynamically.
  */
-class SocialIconFileController extends ControllerBase {
+class PaymentIconFileController extends ControllerBase {
 
   /**
-   * Serves a social icon file.
+   * Serves a payment icon file.
    *
    * @param string $file_name
    *   The name of the file to be served.
