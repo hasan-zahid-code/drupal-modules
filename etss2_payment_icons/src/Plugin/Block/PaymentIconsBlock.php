@@ -7,7 +7,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\media\Entity\Media;
 
-// use Drupal\Core\Url;
 
 /**
  * Provides a 'Payment Icons Block'.
@@ -46,7 +45,10 @@ class PaymentIconsBlock extends BlockBase
     return [
       'content' => [
         '#theme' => 'etss2_payment_icons',
-        '#icons' => $rendered_icons
+        '#icons' => $rendered_icons,
+        '#cache' => [
+        'max-age' => 0,
+      ],
       ],
     ];
 
@@ -68,7 +70,7 @@ class PaymentIconsBlock extends BlockBase
     $form['icons'] = [
       '#type' => 'fieldset',
       '#title' => t('Payment Gateway Icons'),
-      // '#tree' => TRUE,
+      '#tree' => TRUE,
       '#description' => t('Add or edit payment gateway icons uploaded as files. Browse existing icons from the media library or upload a new one.'),
     ];
 
@@ -150,14 +152,12 @@ class PaymentIconsBlock extends BlockBase
   {
     $triggering_element = $form_state->getTriggeringElement();
     $index = explode('_', $triggering_element['#name'])[1]; // Extract index.
-    \Drupal::logger('etss2_payment_icons')->debug('$index: @icons', ['@icons' => print_r($index, TRUE)]);
+    // \Drupal::logger('etss2_payment_icons')->debug('$index: @icons', ['@icons' => print_r($index, TRUE)]);
     $icons = $form_state->get('icons') ?? []; // Ensure $icons is always an array.
 
     unset($icons[$index]);
 
     $form_state->set('icons', array_values($icons));
-
-    \Drupal::messenger()->addMessage(t('The icon has been successfully removed.'));
 
     $form_state->setRebuild(TRUE);
   }
@@ -175,22 +175,6 @@ class PaymentIconsBlock extends BlockBase
   public function blockSubmit($form, FormStateInterface $form_state)
   {
     $this->setConfigurationValue('icons', $form_state->getValue('icons'));
-  }
-
-
-  protected function getS3FileUrl($file_uri)
-  {
-    $s3_config = \Drupal::config('s3fs.settings'); // For S3 configuration
-
-    $bucket_name = $s3_config->get('bucket');
-
-    $s3_base_url = 'https://' . $bucket_name . '.s3.amazonaws.com/';
-
-    // Clean the file URI by removing the "s3://" or "public://" prefix.
-    $file_uri = preg_replace('/^(s3:|public:)\/\//', '', $file_uri);
-
-    // Return the full S3 URL.
-    return $s3_base_url . $file_uri;
   }
 
 }

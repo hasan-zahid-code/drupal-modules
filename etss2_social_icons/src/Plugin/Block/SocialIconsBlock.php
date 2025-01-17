@@ -5,7 +5,7 @@ namespace Drupal\etss2_social_icons\Plugin\Block;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\Core\Url;
+use Drupal\media\Entity\Media;
 
 /**
  * Provides a 'Social Icons Block'.
@@ -31,32 +31,14 @@ class SocialIconsBlock extends BlockBase
     $config = $this->getConfiguration();
     $icons = $config['icons'] ?? [];
 
-    // Prepare rendered icons for the block.
     $rendered_icons = array_map(function ($icon) {
       $file_url = '';
-
-      if (isset($icon['media_id']) && !empty($icon['media_id'])) {
-        // Load the media entity using the entity type manager.
-        $media_storage = \Drupal::entityTypeManager()->getStorage('media');
-        $media = $media_storage->load($icon['media_id']);
-
-        if ($media && $media->hasField('thumbnail')) {
-          // Get the file entity associated with the field.
-          $file = $media->get('thumbnail')->entity;
-
-          if ($file) {
-            // Get the file URI.
-            $file_uri = $file->getFileUri();
-
-            // Generate the full S3 URL.
-            $file_url = $this->getFileUrl($file_uri);
-          }
-        }
+      if (isset($icon['media_id']) && $media = Media::load($icon['media_id'])) {
+        $file_url = $media->get('thumbnail')->entity->createFileUrl();
       }
-
       return [
         'icon' => htmlspecialchars($icon['icon'], ENT_QUOTES, 'UTF-8'),
-        'link' => Url::fromUri($icon['link'])->toString(),
+        'link' => $icon['link'],
         'url' => $file_url,
       ];
     }, $icons);
@@ -198,33 +180,6 @@ class SocialIconsBlock extends BlockBase
   {
     if (!filter_var($element['#value'], FILTER_VALIDATE_URL)) {
       $form_state->setError($element, $this->t('The URL provided is not valid. Please enter a valid URL.'));
-    }
-  }
-
-  protected function getFileUrl($file_uri)
-  {
-    // Check if the file URI contains 's3://'.
-    if (str_starts_with($file_uri, 's3://')) {
-      $s3_config = \Drupal::config('s3fs.settings');
-      $bucket_name = $s3_config->get('bucket');
-
-      if (!$bucket_name) {
-        throw new \Exception('S3 bucket name is not configured.');
-      }
-
-      $s3_base_url = 'https://' . $bucket_name . '.s3.amazonaws.com/';
-
-      $clean_uri = str_replace('s3://', '', $file_uri);
-
-      return $s3_base_url . $clean_uri;
-    } elseif (str_starts_with($file_uri, 'public://')) {
-      $public_base_url = \Drupal::service('file_system')->getSchemeWrapper('public');
-
-      $clean_uri = str_replace('public://', '', $file_uri);
-
-      return $public_base_url . $clean_uri;
-    } else {
-      throw new \Exception('Unsupported URI scheme: ' . $file_uri);
     }
   }
 
